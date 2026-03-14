@@ -1,4 +1,4 @@
-# Labs
+#  Generative AI and Agentic AI Labs
 
 Hands-on labs for the **Generative AI and Agentic AI** course. A collection of practical exercises covering everything from basic prompting to advanced multi-agent systems.
 
