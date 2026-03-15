@@ -1,0 +1,8 @@
+# LangChain (same as Lab 2)
+langchain==1.1.0
+langchain-core==1.1.0
+langchain-openai==1.1.0
+python-dotenv==1.2.1
+
+# Jupyter for running the notebook
+jupyter>=1.0.0
