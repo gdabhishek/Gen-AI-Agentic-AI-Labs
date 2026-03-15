@@ -7,7 +7,7 @@ load_dotenv()
 client = genai.Client()
 
 
-result = client.models.generate_content(model = "gemini-3-pro-preview", 
+result = client.models.generate_content(model = "gemini-2.5-flash", 
                                         contents ="Hello, how are you?")
 print(result)
 print("--------------------------------")

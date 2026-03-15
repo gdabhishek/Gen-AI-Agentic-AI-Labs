@@ -38,18 +38,46 @@ Be helpful and empathetic."""
 )
 response_chain = response_prompt | llm | StrOutputParser()
 
+def get_sentiment(x):
+    return x["sentiment"]
+
+def get_category(x):
+    return x["category"]
+
+def get_message(x):
+    return x["message"]
 
 # Run sentiment and category in parallel, then generate response
 parallel_chain = (
     RunnableParallel(
         {
-            "message": lambda x: x["message"],  # Pass through the original message
+            "message": get_message,  # Pass through the original message
             "sentiment": sentiment_chain,
             "category": category_chain
         }
     )
-    | response_chain
+    |  {  
+        "sentiment":get_sentiment,   
+        "category": get_category,
+        "response": response_chain
+        }
 )
+
+#with lambda function
+# parallel_chain = (
+#     RunnableParallel(
+#         {
+#             "message": get_message,  # Pass through the original message
+#             "sentiment": sentiment_chain,
+#             "category": category_chain
+#         }
+#     )
+#     | {  
+#         "sentiment":lambda x: x["sentiment"],   
+#         "category": lambda x: x["category"],
+#         "response": response_chain
+#         }
+# )
 
 result = parallel_chain.invoke({"message": "I love your product but the shipping was slow"})
 print(f"\nFinal Response:\n{result}")

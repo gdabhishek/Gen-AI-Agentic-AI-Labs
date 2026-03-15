@@ -2,7 +2,7 @@
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough, RunnableParallel
+from langchain_core.runnables import RunnablePassthrough
 from langchain.chat_models import init_chat_model
 from dotenv import load_dotenv
 
@@ -38,14 +38,37 @@ Be helpful and empathetic."""
 )
 response_chain = response_prompt | llm | StrOutputParser()
 
+def get_sentiment(x):
+    return x["sentiment"]
+
+def get_category(x):
+    return x["category"]
+
 full_chain = (
     RunnablePassthrough.assign(sentiment=sentiment_chain) 
     | RunnablePassthrough.assign(category=category_chain) 
-    | response_chain
+    | {  
+        "sentiment":get_sentiment,   
+        "category": get_category,
+        "response": response_chain
+        }
 )
 
+#with lambda function
+# full_chain = (
+#     RunnablePassthrough.assign(sentiment=sentiment_chain) 
+#     | RunnablePassthrough.assign(category=category_chain) 
+#     | {  
+#         "sentiment":lambda x: x["sentiment"],   
+#         "category": lambda x: x["category"],
+#         "response": response_chain
+#         }
+# )
 
-result = full_chain.invoke({"message": "My order is late and I'm really frustrated!"})
 
+result = full_chain.invoke({"message": "I love the product, but the shipping was slow."})
+print(result)
 
-print(f"\nFinal Response:\n{result}")
+print("Sentiment: ", result["sentiment"])
+print("Category: ", result["category"])
+print("Response: ", result["response"])
