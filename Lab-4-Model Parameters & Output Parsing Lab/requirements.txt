@@ -1,6 +1,8 @@
 # Pydantic for structured output parsing
-pydantic>=2.0.0
+pydantic==2.12.5
 
 # Environment and Jupyter
-python-dotenv==1.2.1
-jupyter>=1.0.0
+python-dotenv
+
+# Token cost tracking (100+ models, live pricing from api.litellm.ai)
+litellm==1.82.5
