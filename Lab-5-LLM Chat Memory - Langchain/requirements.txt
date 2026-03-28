@@ -1,0 +1,12 @@
+# Core LangChain packages (aligned with earlier labs)
+langchain==1.1.0
+langchain-core==1.1.0
+langchain-anthropic==1.2.0
+
+# SQLite chat history (SQLChatMessageHistory)
+langchain-community==0.4.1
+
+# Redis chat history (RedisChatMessageHistory)
+redis==5.2.1
+
+python-dotenv==1.2.1
