@@ -8,3 +8,5 @@ qdrant-client==1.16.2
 langchain-qdrant==1.1.0
 langchain-chroma==1.1.0
 gensim==4.4.0
+langchain-huggingface
+langchain-experimental
