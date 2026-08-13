@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-llm = init_chat_model("gpt-4o-mini", model_provider="openai")
+# Updated model to gpt-5-mini
+llm = init_chat_model("gpt-5-mini", model_provider="openai")
 
 llm_validator = init_chat_model("gpt-4.1", model_provider="openai")
 
