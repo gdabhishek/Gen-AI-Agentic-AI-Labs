@@ -1,6 +1,7 @@
-"""Lab 12 - LangSmith basics.
+"""Lab 12 - LangSmith basics with LangGraph.
 
-Traces a tiny assistant so you can inspect it in the LangSmith UI.
+Builds a small LangGraph workflow (retrieve -> generate) and traces it in
+LangSmith so you can inspect every node in the UI.
 
 Required environment variables (put them in your .env file):
     OPENAI_API_KEY
@@ -10,37 +11,78 @@ Required environment variables (put them in your .env file):
 """
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from typing_extensions import TypedDict
+from langchain.chat_models import init_chat_model
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langgraph.graph import StateGraph, START, END
 from langsmith import traceable
-from langsmith.wrappers import wrap_openai
 
 load_dotenv()
 
-# Wrapping the client logs every OpenAI call automatically
-client = wrap_openai(OpenAI())
+# LangChain models are traced automatically when LANGSMITH_TRACING=true,
+# so there is no need for wrap_openai anymore.
+llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 
 
+# ---------- State ----------
+class AssistantState(TypedDict):
+    question: str
+    context: str
+    answer: str
+
+
+# ---------- Helper traced with @traceable ----------
 @traceable(run_type="tool", name="get_context")
 def get_context(question: str) -> str:
     """Fake retrieval step. In a real app this would query a vector store."""
     return "LangSmith is a platform for tracing, evaluating, and monitoring LLM apps."
 
 
-@traceable(name="assistant", tags=["lab-12"], metadata={"topic": "langsmith-basics"})
-def assistant(question: str) -> str:
-    """Parent run: groups the retrieval step and the LLM call in one trace."""
-    context = get_context(question)
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": f"Answer using this context:\n{context}"},
-            {"role": "user", "content": question},
-        ],
+# ---------- Nodes ----------
+def retrieve(state: AssistantState):
+    """Node 1: fetch context for the question."""
+    print("Retrieving context")
+    return {"context": get_context(state["question"])}
+
+
+def generate(state: AssistantState):
+    """Node 2: answer the question using the retrieved context."""
+    print("Generating answer")
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "Answer using this context:\n{context}"),
+            ("user", "{question}"),
+        ]
     )
-    return response.choices[0].message.content
+    chain = prompt | llm | StrOutputParser()
+    answer = chain.invoke(
+        {"context": state["context"], "question": state["question"]}
+    )
+    return {"answer": answer}
+
+
+# ---------- Graph ----------
+workflow = StateGraph(AssistantState)
+workflow.add_node("retrieve", retrieve)
+workflow.add_node("generate", generate)
+
+workflow.add_edge(START, "retrieve")
+workflow.add_edge("retrieve", "generate")
+workflow.add_edge("generate", END)
+
+app = workflow.compile()
 
 
 if __name__ == "__main__":
-    answer = assistant("What is LangSmith used for?")
-    print(answer)
+    # run_name, tags and metadata show up on the root run in LangSmith
+    result = app.invoke(
+        {"question": "What is LangSmith used for?"},
+        config={
+            "run_name": "assistant",
+            "tags": ["lab-12"],
+            "metadata": {"topic": "langsmith-basics"},
+        },
+    )
+    print(result["answer"])
     print("\nDone! Open https://smith.langchain.com to view the trace.")
